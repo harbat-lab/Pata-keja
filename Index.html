@@ -1,0 +1,50 @@
+const express = require('express');
+const axios = require('axios');
+const app = express();
+app.use(express.json());
+
+// YOUR POCHI NUMBER - ONLY HERE, NOT IN HTML
+const POCHI_NUMBER = '0797740645';
+
+// Daraja credentials - get from developer.safaricom.co.ke
+const CONSUMER_KEY = 'YOUR_KEY';
+const CONSUMER_SECRET = 'YOUR_SECRET';
+const PASSKEY = 'YOUR_PASSKEY';
+const SHORTCODE = 'YOUR_SHORTCODE';
+
+async function getToken(){
+  const auth = Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString('base64');
+  const res = await axios.get('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',{
+    headers:{Authorization:`Basic ${auth}`}
+  });
+  return res.data.access_token;
+}
+
+app.post('/api/pochi/stkpush', async (req,res)=>{
+  const {phone, amount, reference} = req.body;
+  try{
+    const token = await getToken();
+    const timestamp = new Date().toISOString().replace(/[-:T.]/g,'').slice(0,14);
+    const password = Buffer.from(SHORTCODE + PASSKEY + timestamp).toString('base64');
+
+    const stk = await axios.post('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',{
+      BusinessShortCode: SHORTCODE,
+      Password: password,
+      Timestamp: timestamp,
+      TransactionType: 'CustomerBuyGoodsOnline',
+      Amount: amount,
+      PartyA: phone,
+      PartyB: POCHI_NUMBER, // Pochi here, not frontend
+      PhoneNumber: phone,
+      CallBackURL: 'https://yourdomain.com/api/callback',
+      AccountReference: reference,
+      TransactionDesc: 'Pata Keja'
+    },{headers:{Authorization:`Bearer ${token}`}});
+
+    res.json({success:true, message:'STK sent'});
+  }catch(e){
+    res.status(500).json({success:false,message:e.message});
+  }
+});
+
+app.listen(3000,()=>console.log('Server running'));
