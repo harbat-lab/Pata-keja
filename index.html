@@ -1,405 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pata Keja - Houses & Shops in Nairobi</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{--green:#00A651;--dark:#1A1A1A;--gray:#F5F5F5;--gold:#FFB300}
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
-body{background:var(--gray);color:var(--dark)}
-.header{background:var(--green);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000}
-.logo{font-weight:700;font-size:20px}
-.btn{background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer}
-.btn-outline{background:#fff;color:var(--green);border:1px solid var(--green)}
-.btn:disabled{opacity:0.5;cursor:not-allowed}
-.filters{padding:12px 16px;background:#fff;border-bottom:1px solid #ddd;display:flex;gap:8px;overflow-x:auto}
-.filter-chip{padding:6px 12px;border:1px solid #ddd;border-radius:20px;font-size:14px;white-space:nowrap;cursor:pointer}
-.filter-chip.active{background:var(--green);color:#fff;border-color:var(--green)}
-#map{height:40vh;width:100%}
-.list{padding:16px;display:grid;gap:12px}
-.card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);position:relative}
-.card.boosted{border:2px solid var(--gold)}
-.card-img{width:100%;height:160px;object-fit:cover;background:#eee}
-.card-body{padding:12px}
-.price{font-size:18px;font-weight:700;color:var(--green)}
-.meta{font-size:14px;color:#666;margin:4px 0}
-.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:4px;background:#E8F5E9;color:var(--green);margin-right:4px}
-.badge.boosted{background:var(--gold);color:#000}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:2000;padding:16px}
-.modal.active{display:flex}
-.modal-box{background:#fff;border-radius:16px;max-width:400px;width:100%;max-height:90vh;overflow:auto}
-.modal-head{padding:16px;border-bottom:1px solid #eee;font-weight:700;display:flex;justify-content:space-between}
-.modal-body{padding:16px}
-.input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0}
-.video-section{padding:24px 16px;background:#fff;margin:16px 0;text-align:center}
-.error{background:#FFEBEE;color:#C62828;padding:12px;border-radius:8px;margin:12px 16px;display:none}
-.loading{text-align:center;padding:40px;color:#666}
-.play-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pata Keja</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+    }
+    .header {
+      background: #10b981;
+      color: white;
+      padding: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .container {
+      padding: 15px;
+    }
+    #map {
+      height: 400px;
+      width: 100%;
+      border-radius: 12px;
+      margin: 10px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .house-card {
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="logo">Pata Keja</div>
-  <div id="headerRight">
-    <button class="btn-outline" onclick="showLogin()">Login</button>
+  <div class="header">
+    <span>Pata Keja</span>
+    <span style="font-size:14px; font-weight:normal;">Login</span>
   </div>
-</div>
 
-<div id="error" class="error"></div>
-
-<div class="filters">
-  <div class="filter-chip active" onclick="setFilter('type','all')">All</div>
-  <div class="filter-chip" onclick="setFilter('type','house')">Houses</div>
-  <div class="filter-chip" onclick="setFilter('type','shop')">Shops</div>
-  <div class="filter-chip" onclick="setFilter('type','single')">Single Room</div>
-  <div class="filter-chip" onclick="setFilter('beds','bedsitter')">Bedsitter</div>
-  <div class="filter-chip" onclick="setFilter('beds','1br')">1BR</div>
-  <div class="filter-chip" onclick="setFilter('beds','2br')">2BR+</div>
-</div>
-
-<div id="map" style="height: 400px; width: 100%; border-radius: 12px; margin: 10px 0;"></div>
-
-<div class="video-section">
-  <h3>See how Pata Keja works in 60 sec</h3>
-  <video controls poster="https://via.placeholder.com/400x225?text=Pata+Keja+Demo" style="width:100%;border-radius:8px;margin:12px 0">
-    <source src="" type="video/mp4">
-    Your browser does not support video.
-  </video>
-  <p style="font-size:14px;color:#666">Caretakers: Upload 15-sec video tours to get 3x more views</p>
-</div>
-
-<div id="list" class="list">
-  <div class="loading">Loading houses near you...</div>
-</div>
-
-<!-- Login Modal -->
-<div id="loginModal" class="modal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span>Login with M-Pesa Number</span>
-      <span onclick="closeModal('loginModal')" style="cursor:pointer">✕</span>
-    </div>
-    <div class="modal-body">
-      <div id="loginStep1">
-        <p style="font-size:14px;color:#666">We’ll send a 4-digit code to verify it’s you</p>
-        <input id="loginPhone" class="input" type="tel" placeholder="0712 345 678">
-        <button id="sendOtpBtn" class="btn" style="width:100%" onclick="sendOTP()">Send Code</button>
-      </div>
-      <div id="loginStep2" style="display:none">
-        <p style="font-size:14px;color:#666">Code sent to <span id="phoneDisplay"></span></p>
-        <input id="otpInput" class="input" type="tel" maxlength="4" placeholder="4921" style="text-align:center;letter-spacing:8px">
-        <button id="verifyBtn" class="btn" style="width:100%" onclick="verifyOTP()">Verify & Continue</button>
-        <p id="loginStatus" style="font-size:14px;margin-top:12px;color:#666"></p>
-      </div>
-    </div>
+  <div class="container">
+    <!-- Map goes here -->
+    <div id="map"></div>
+    
+    <!-- Video section -->
+    <h3>See how Pata Keja works in 60 sec</h3>
+    <video width="100%" controls style="border-radius: 8px;">
+      <source src="" type="video/mp4">
+      Your browser does not support video.
+    </video>
+    <p style="font-size: 14px; color: #555;">Caretakers: Upload 15-sec video tours to get 3x more views</p>
+    
+    <!-- Houses list -->
+    <h3>Houses near you</h3>
+    <div id="list"></div>
+    <p id="loading" style="text-align:center; color:#666;">Loading houses near you...</p>
   </div>
-</div>
 
-<!-- Payment Modal -->
-<div id="payModal" class="modal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span>Unlock Contact</span>
-      <span onclick="closeModal('payModal')" style="cursor:pointer">✕</span>
-    </div>
-    <div class="modal-body">
-      <p>Pay <b>100 KES</b> via M-Pesa to view caretaker phone</p>
-      <p id="payPhone" style="font-size:14px;color:#666;margin:8px 0"></p>
-      <button id="payBtn" class="btn" style="width:100%" onclick="initiateSTK()">Pay 100 KES</button>
-      <p id="payStatus" style="font-size:14px;margin-top:12px;color:#666"></p>
-    </div>
-  </div>
-</div>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script>
+    let map;
+    let markers = [];
+    
+    // Sample house data for Nairobi
+    const houses = [
+      { lat: -1.2921, lng: 36.8219, title: "1BR in CBD", price: "Ksh 25,000" },
+      { lat: -1.3001, lng: 36.7845, title: "Bedsitter Kilimani", price: "Ksh 15,000" },
+      { lat: -1.2676, lng: 36.8118, title: "2BR Westlands", price: "Ksh 45,000" },
+      { lat: -1.3032, lng: 36.8770, title: "1BR Buruburu", price: "Ksh 18,000" }
+    ];
 
-<!-- Post Modal -->
-<div id="postModal" class="modal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span>List House/Shop - 300 KES</span>
-      <span onclick="closeModal('postModal')" style="cursor:pointer">✕</span>
-    </div>
-    <div class="modal-body">
-      <input id="postTitle" class="input" placeholder="Title: 2BR in Kilimani">
-      <select id="postType" class="input">
-        <option value="house">House</option>
-        <option value="shop">Shop</option>
-        <option value="single">Single Room</option>
-      </select>
-      <input id="postPrice" class="input" type="number" placeholder="Price per month">
-      <input id="postEstate" class="input" placeholder="Estate: Kilimani">
-      <input id="postBeds" class="input" placeholder="Beds: 2br, bedsitter, shop">
-      <input id="postImages" class="input" type="file" accept="image/*" multiple>
-      <input id="postVideo" class="input" type="file" accept="video/mp4">
-      <p style="font-size:12px;color:#666">Images: max 3. Video: 15sec max</p>
-      <button class="btn" style="width:100%" onclick="createListing()">Pay 300 KES & Post</button>
-      <p id="postStatus" style="font-size:14px;margin-top:12px;color:#666"></p>
-    </div>
-  </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-// REPLACE THESE 3 LINES WITH YOUR ACTUAL VALUES
-const API_URL = 'https://your-render-url.onrender.com';
-const SUPABASE_URL = 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = 'your-anon-key';
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-let map, markers = [], currentListing = null, currentUser = null;
-let filters = {type:'all',beds:'all'};
-let allListings = [];
-let pendingAction = null;
-
-window.addEventListener('load', async ()=>{
-  currentUser = JSON.parse(localStorage.getItem('patakeja_user')||'null');
-  updateHeader();
-  await loadListings();
-  initMap();
-});
-
-function showError(msg){
-  const el = document.getElementById('error');
-  el.textContent = msg;
-  el.style.display = 'block';
-  setTimeout(()=>el.style.display='none',5000);
-}
-
-function updateHeader(){
-  const el = document.getElementById('headerRight');
-  if(currentUser){
-    el.innerHTML = `
-      <span style="font-size:14px;margin-right:8px">${currentUser.phone}</span>
-      <button class="btn-outline" onclick="showPostModal()">Post</button>
-    `;
-  }else{
-    el.innerHTML = `<button class="btn-outline" onclick="showLogin()">Login</button>`;
-  }
-}
-
-function requireLogin(cb){
-  if(currentUser){ cb(); }
-  else{ pendingAction = cb; showLogin(); }
-}
-
-function showLogin(){ document.getElementById('loginModal').classList.add('active'); }
-
-async function sendOTP(){
-  const phone = document.getElementById('loginPhone').value.replace(/\s/g,'');
-  const btn = document.getElementById('sendOtpBtn');
-  if(phone.length<10){ alert('Enter valid number'); return; }
-
-  btn.disabled = true; btn.textContent = 'Sending...';
-
-  try{
-    await fetch(`${API_URL}/api/auth/send-otp`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({phone})
-    });
-    document.getElementById('loginStep1').style.display='none';
-    document.getElementById('loginStep2').style.display='block';
-    document.getElementById('phoneDisplay').textContent = phone;
-  }catch(e){
-    showError('Failed to send code');
-    btn.disabled = false; btn.textContent = 'Send Code';
-  }
-}
-
-async function verifyOTP(){
-  const phone = document.getElementById('loginPhone').value.replace(/\s/g,'');
-  const otp = document.getElementById('otpInput').value;
-  const status = document.getElementById('loginStatus');
-
-  try{
-    const res = await fetch(`${API_URL}/api/auth/verify-otp`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({phone, otp})
-    });
-    const data = await res.json();
-    if(!data.success) throw new Error(data.message);
-
-    currentUser = data.user;
-    localStorage.setItem('patakeja_user', JSON.stringify(currentUser));
-    status.textContent = '✓ Logged in'; status.style.color='var(--green)';
-
-    setTimeout(()=>{
-      closeModal('loginModal');
-      updateHeader();
-      if(pendingAction) pendingAction();
-      pendingAction = null;
-    },800);
-  }catch(e){
-    status.textContent = e.message||'Wrong code'; status.style.color='#C62828';
-  }
-}
-
-async function loadListings(){
-  try{
-    const res = await fetch(`${API_URL}/api/listings`);
-    allListings = await res.json();
-    renderListings();
-  }catch(e){
-    document.getElementById('list').innerHTML = '<div class="loading">Failed to load. Check API_URL.</div>';
-  }
-}
-
-function initMap(){
-  try{
-    map = L.map('map').setView([-1.2921, 36.8219], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    renderMapPins();
-  }catch(e){ showError('Map failed'); }
-}
-
-function renderListings(){
-  const list = document.getElementById('list');
-  markers.forEach(m=>map.removeLayer(m)); markers = [];
-
-  let filtered = allListings.filter(l=>{
-    if(filters.type!=='all' && l.type!==filters.type) return false;
-    if(filters.beds!=='all' && l.beds!==filters.beds) return false;
-    return true;
-  });
-
-  if(filtered.length===0){
-    list.innerHTML = '<div class="loading">No listings match filters</div>'; return;
-  }
-
-  list.innerHTML = filtered.map(l=>`
-    <div class="card ${l.boosted_until&&new Date(l.boosted_until)>new Date()?'boosted':''}" onclick="viewListing(${l.id})">
-      <img src="${l.images?.[0]||'https://via.placeholder.com/400x160'}" class="card-img">
-      ${l.video_url?'<div class="play-icon">▶</div>':''}
-      <div class="card-body">
-        <div class="price">KES ${l.price.toLocaleString()}/mo</div>
-        <div class="meta">${l.title}</div>
-        <div class="meta">${l.estate} • ${l.beds}</div>
-        ${l.verified?'<span class="badge">✓ Verified</span>':''}
-        ${l.boosted_until&&new Date(l.boosted_until)>new Date()?'<span class="badge boosted">★ Boosted</span>':''}
-      </div>
-    </div>
-  `).join('');
-
-  renderMapPins(filtered);
-}
-
-function renderMapPins(listings=allListings){
-  listings.forEach(l=>{
-    const color = l.type==='shop'?'purple':l.type==='single'?'blue':'var(--green)';
-    const icon = L.divIcon({html:`<div style="background:${color};width:24px;height:24px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`});
-    const marker = L.marker([l.lat,l.lng],{icon}).addTo(map).bindPopup(l.title);
-    markers.push(marker);
-  });
-}
-
-function setFilter(key,val){
-  filters[key]=val;
-  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
-  event.target.classList.add('active');
-  renderListings();
-}
-
-async function viewListing(id){
-  currentListing = allListings.find(l=>l.id===id);
-  requireLogin(async ()=>{
-    const res = await fetch(`${API_URL}/api/unlocks/check?user_id=${currentUser.id}&listing_id=${id}`);
-    const {unlocked, phone} = await res.json();
-    if(unlocked){
-      alert(`Caretaker: ${phone}`);
-    }else{
-      document.getElementById('payPhone').textContent = `Your number: ${currentUser.phone}`;
-      document.getElementById('payModal').classList.add('active');
-    }
-  });
-}
-
-async function initiateSTK(){
-  const btn = document.getElementById('payBtn');
-  const status = document.getElementById('payStatus');
-  btn.disabled = true; btn.textContent = 'Sending M-Pesa...';
-  status.textContent = 'Check your phone for M-Pesa prompt';
-
-  try{
-    const res = await fetch(`${API_URL}/api/pochi/stkpush`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        phone: currentUser.phone,
-        amount: 100,
-        reference: `UNLOCK_${currentListing.id}`,
-        description: 'Pata Keja Contact Unlock',
-        user_id: currentUser.id,
-        listing_id: currentListing.id
-      })
-    });
-    const data = await res.json();
-    if(!data.success) throw new Error(data.message);
-    status.textContent = '✓ Payment sent! You’ll get SMS when confirmed.';
-    status.style.color = 'var(--green)';
-  }catch(e){
-    status.textContent = 'Payment failed. Try again.'; status.style.color='#C62828';
-    btn.disabled = false; btn.textContent = 'Pay 100 KES';
-  }
-}
-
-function showPostModal(){
-  requireLogin(()=> document.getElementById('postModal').classList.add('active'));
-}
-
-async function createListing(){
-  const status = document.getElementById('postStatus');
-  status.textContent = 'Uploading...';
-
-  try{
-    const imgFiles = document.getElementById('postImages').files;
-    const imageUrls = [];
-    for(let file of imgFiles){
-      const {data, error} = await supabase.storage.from('listing-images').upload(`${Date.now()}-${file.name}`, file);
-      if(error) throw error;
-      const {data:{publicUrl}} = supabase.storage.from('listing-images').getPublicUrl(data.path);
-      imageUrls.push(publicUrl);
+    function initMap(){
+      // Create map centered on Nairobi
+      map = L.map('map').setView([-1.2921, 36.8219], 12);
+      
+      // Add OpenStreetMap tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+      
+      // Add house markers
+      renderMapPins();
+      renderListings();
+      document.getElementById('loading').style.display = 'none';
     }
 
-    let videoUrl = null;
-    const videoFile = document.getElementById('postVideo').files[0];
-    if(videoFile){
-      const {data, error} = await supabase.storage.from('listing-videos').upload(`${Date.now()}-${videoFile.name}`, videoFile);
-      if(!error) videoUrl = supabase.storage.from('listing-videos').getPublicUrl(data.path).data.publicUrl;
+    function renderMapPins(){
+      houses.forEach(house => {
+        const marker = L.marker([house.lat, house.lng])
+          .addTo(map)
+          .bindPopup(`<b>${house.title}</b><br>${house.price}`);
+        markers.push(marker);
+      });
     }
 
-    const lat = -1.2921 + (Math.random()-0.5)*0.1;
-    const lng = 36.8219 + (Math.random()-0.5)*0.1;
+    function renderListings(){
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+      houses.forEach(house => {
+        const card = document.createElement('div');
+        card.className = 'house-card';
+        card.innerHTML = `<b>${house.title}</b><br>${house.price}`;
+        list.appendChild(card);
+      });
+    }
 
-    const listing = {
-      user_id: currentUser.id,
-      type: document.getElementById('postType').value,
-      title: document.getElementById('postTitle').value,
-      price: parseInt(document.getElementById('postPrice').value),
-      estate: document.getElementById('postEstate').value,
-      beds: document.getElementById('postBeds').value,
-      lat, lng, images: imageUrls, video_url: videoUrl
-    };
-
-    const res = await fetch(`${API_URL}/api/listings`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(listing)
-    });
-
-    if(!res.ok) throw new Error('Failed to create');
-
-    status.textContent = '✓ Posted! Pay 300 KES via STK to activate.';
-    status.style.color = 'var(--green)';
-    setTimeout(()=>{ closeModal('postModal'); loadListings(); },1500);
-
-  }catch(e){
-    status.textContent = e.message; status.style.color='#C62828';
-  }
-}
-
-function closeModal(id){ document.getElementById(id).classList.remove('active'); }
-</script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDKPstS-MOLIoU9466rmIm6I19hmjjyKIE&libraries=places&callback=initMap" async defer></script>
+    // Load map when page is ready
+    document.addEventListener('DOMContentLoaded', initMap);
+  </script>
 </body>
-  </html>
+</html>
