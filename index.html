@@ -1,380 +1,405 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pata Keja - Find Your Next Home + Kazi in Nairobi</title>
-  
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  
-  <style>
-    :root {
-      --pk-green: #10b981;
-      --pk-dark: #065f46;
-      --pk-light: #d1fae5;
-      --pk-gray: #6b7280;
-      --pk-blue: #3b82f6;
-      --pk-orange: #f97316;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Poppins', sans-serif; background: #f9fafb; color: #111827; }
-    .header { background: linear-gradient(135deg, var(--pk-green), var(--pk-dark)); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-    .logo { display: flex; align-items: center; gap: 8px; }
-    .logo img { height: 36px; width: auto; max-width: 120px; object-fit: contain; background: white; padding: 4px; border-radius: 8px; }
-    .logo-text { font-size: 22px; font-weight: 700; }
-    .header-actions { display: flex; gap: 8px; }
-    .btn-login, .btn-admin { padding: 8px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: 'Poppins'; }
-    .btn-login { background: white; color: var(--pk-dark); }
-    .btn-admin { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; }
-    .container { padding: 16px; max-width: 600px; margin: 0 auto; }
-    .tabs { display: flex; background: white; border-radius: 12px; padding: 4px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .tab { flex: 1; padding: 10px; border: none; background: transparent; font-family: 'Poppins'; font-weight: 600; font-size: 14px; border-radius: 8px; cursor: pointer; color: var(--pk-gray); transition: all 0.2s; }
-    .tab.active { background: var(--pk-green); color: white; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .card { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 16px; overflow: hidden; }
-    #map { height: 320px; width: 100%; z-index: 1; }
-    .filters { padding: 16px; }
-    .search-box { position: relative; margin-bottom: 16px; }
-    .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--pk-gray); }
-    #searchInput { width: 100%; padding: 12px 16px 12px 40px; border: 2px solid #e5e7eb; border-radius: 12px; font-family: 'Poppins'; font-size: 14px; outline: none; }
-    #searchInput:focus { border-color: var(--pk-green); box-shadow: 0 0 0 3px var(--pk-light); }
-    .price-filter label { font-size: 13px; font-weight: 600; color: var(--pk-dark); display: block; margin-bottom: 8px; }
-    .price-range { display: flex; align-items: center; gap: 12px; }
-    #priceSlider { flex: 1; height: 6px; border-radius: 3px; background: #e5e7eb; outline: none; -webkit-appearance: none; }
-    #priceSlider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--pk-green); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-    #priceValue { font-size: 14px; font-weight: 600; color: var(--pk-green); min-width: 80px; text-align: right; }
-    .section-title { font-size: 18px; font-weight: 600; margin: 24px 0 12px 4px; color: #111827; display: flex; align-items: center; gap: 8px; }
-    .video-container { padding: 16px; }
-    video { width: 100%; border-radius: 12px; }
-    .caption { font-size: 13px; color: var(--pk-gray); margin-top: 8px; text-align: center; }
-    .house-card, .job-card { padding: 12px; border-bottom: 1px solid #f3f4f6; scroll-margin-top: 80px; }
-    .house-card:last-child, .job-card:last-child { border-bottom: none; }
-    .house-card.highlight, .job-card.highlight { background: var(--pk-light); border-left: 4px solid var(--pk-green); }
-    .house-main { display: flex; gap: 12px; align-items: flex-start; }
-    .house-thumb { width: 80px; height: 60px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
-    .house-info { flex: 1; }
-    .house-info h4 { font-size: 15px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
-    .verified-badge { color: var(--pk-blue); font-size: 14px; }
-    .house-info p { font-size: 14px; color: var(--pk-green); font-weight: 600; margin-bottom: 4px; }
-    .house-info span { font-size: 12px; color: var(--pk-gray); display: block; margin-bottom: 8px; }
-    .house-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-    .btn { border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Poppins'; display: inline-flex; align-items: center; gap: 4px; justify-content: center; }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-primary { background: var(--pk-green); color: white; }
-    .btn-secondary { background: white; color: var(--pk-green); border: 2px solid var(--pk-green); }
-    .btn-whatsapp { background: #25D366; color: white; }
-    .btn-danger { background: #ef4444; color: white; }
-    .btn-orange { background: var(--pk-orange); color: white; }
-    .caretaker-info { background: #f9fafb; padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 13px; display: none; }
-    .caretaker-info.show { display: block; }
-    .job-badge { background: var(--pk-orange); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-    .job-meta { display: flex; gap: 12px; font-size: 12px; color: var(--pk-gray); margin: 8px 0; }
-    .loading { text-align: center; padding: 20px; color: var(--pk-gray); }
-    .no-results { text-align: center; padding: 40px 20px; color: var(--pk-gray); }
-    .photo-pin { width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); object-fit: cover; cursor: pointer; }
-    .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; }
-    .leaflet-popup-content { margin: 0; width: 220px !important; }
-    .popup-img { width: 100%; height: 100px; object-fit: cover; border-radius: 12px 12px 0 0; }
-    .popup-info { padding: 12px; font-family: 'Poppins'; }
-    .popup-btn { width: 100%; margin-top: 6px; }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; }
-    .modal.show { display: flex; }
-    .modal-content { background: white; border-radius: 16px; padding: 24px; max-width: 400px; width: 100%; max-height: 90vh; overflow-y: auto; }
-    .modal-content h3 { margin-bottom: 8px; color: var(--pk-dark); }
-    .modal-content p { font-size: 14px; color: var(--pk-gray); margin-bottom: 20px; }
-    .modal-content input, .modal-content textarea, .modal-content select { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 10px; font-family: 'Poppins'; font-size: 14px; margin-bottom: 12px; }
-    .modal-content label { font-size: 13px; font-weight: 600; color: var(--pk-dark); display: block; margin-bottom: 6px; }
-    .modal-content .btn { width: 100%; padding: 12px; font-size: 14px; margin-bottom: 8px; }
-    .modal-close { background: #e5e7eb; color: var(--pk-gray); }
-    .admin-table { width: 100%; font-size: 12px; }
-    .admin-table th { text-align: left; padding: 8px; background: var(--pk-light); font-weight: 600; }
-    .admin-table td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
-    .caretaker-banner { background: linear-gradient(135deg, #3b82f6, #1e40af); color: white; padding: 16px; text-align: center; border-radius: 12px; margin-bottom: 16px; }
-    .caretaker-banner h4 { margin-bottom: 8px; }
-    .caretaker-banner p { font-size: 13px; opacity: 0.9; margin-bottom: 12px; }
-    .owner-banner { background: linear-gradient(135deg, var(--pk-orange), #ea580c); color: white; padding: 16px; text-align: center; border-radius: 12px; margin-bottom: 16px; }
-    @media (max-width: 480px) { .logo-text { font-size: 18px; } .logo img { height: 32px; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pata Keja - Houses & Shops in Nairobi</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--green:#00A651;--dark:#1A1A1A;--gray:#F5F5F5;--gold:#FFB300}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
+body{background:var(--gray);color:var(--dark)}
+.header{background:var(--green);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000}
+.logo{font-weight:700;font-size:20px}
+.btn{background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer}
+.btn-outline{background:#fff;color:var(--green);border:1px solid var(--green)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.filters{padding:12px 16px;background:#fff;border-bottom:1px solid #ddd;display:flex;gap:8px;overflow-x:auto}
+.filter-chip{padding:6px 12px;border:1px solid #ddd;border-radius:20px;font-size:14px;white-space:nowrap;cursor:pointer}
+.filter-chip.active{background:var(--green);color:#fff;border-color:var(--green)}
+#map{height:40vh;width:100%}
+.list{padding:16px;display:grid;gap:12px}
+.card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);position:relative}
+.card.boosted{border:2px solid var(--gold)}
+.card-img{width:100%;height:160px;object-fit:cover;background:#eee}
+.card-body{padding:12px}
+.price{font-size:18px;font-weight:700;color:var(--green)}
+.meta{font-size:14px;color:#666;margin:4px 0}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:4px;background:#E8F5E9;color:var(--green);margin-right:4px}
+.badge.boosted{background:var(--gold);color:#000}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:2000;padding:16px}
+.modal.active{display:flex}
+.modal-box{background:#fff;border-radius:16px;max-width:400px;width:100%;max-height:90vh;overflow:auto}
+.modal-head{padding:16px;border-bottom:1px solid #eee;font-weight:700;display:flex;justify-content:space-between}
+.modal-body{padding:16px}
+.input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0}
+.video-section{padding:24px 16px;background:#fff;margin:16px 0;text-align:center}
+.error{background:#FFEBEE;color:#C62828;padding:12px;border-radius:8px;margin:12px 16px;display:none}
+.loading{text-align:center;padding:40px;color:#666}
+.play-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px}
+</style>
 </head>
 <body>
-  <div class="header">
-    <div class="logo">
-      <img src="logo.png" alt="Pata Keja Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-      <i class="fa-solid fa-house-chimney" style="display:none; font-size:28px;"></i>
-      <span class="logo-text">Pata Keja</span>
-    </div>
-    <div class="header-actions">
-      <button class="btn-admin" onclick="showAdminLogin()"><i class="fa-solid fa-shield-halved"></i> Admin</button>
-      <button class="btn-login" onclick="showCaretakerModal()">Caretaker</button>
-    </div>
+
+<div class="header">
+  <div class="logo">Pata Keja</div>
+  <div id="headerRight">
+    <button class="btn-outline" onclick="showLogin()">Login</button>
   </div>
+</div>
 
-  <div class="container">
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('houses')"><i class="fa-solid fa-house"></i> Nyumba</button>
-      <button class="tab" onclick="switchTab('jobs')"><i class="fa-solid fa-briefcase"></i> Kazi</button>
+<div id="error" class="error"></div>
+
+<div class="filters">
+  <div class="filter-chip active" onclick="setFilter('type','all')">All</div>
+  <div class="filter-chip" onclick="setFilter('type','house')">Houses</div>
+  <div class="filter-chip" onclick="setFilter('type','shop')">Shops</div>
+  <div class="filter-chip" onclick="setFilter('type','single')">Single Room</div>
+  <div class="filter-chip" onclick="setFilter('beds','bedsitter')">Bedsitter</div>
+  <div class="filter-chip" onclick="setFilter('beds','1br')">1BR</div>
+  <div class="filter-chip" onclick="setFilter('beds','2br')">2BR+</div>
+</div>
+
+<div id="map"></div>
+
+<div class="video-section">
+  <h3>See how Pata Keja works in 60 sec</h3>
+  <video controls poster="https://via.placeholder.com/400x225?text=Pata+Keja+Demo" style="width:100%;border-radius:8px;margin:12px 0">
+    <source src="" type="video/mp4">
+    Your browser does not support video.
+  </video>
+  <p style="font-size:14px;color:#666">Caretakers: Upload 15-sec video tours to get 3x more views</p>
+</div>
+
+<div id="list" class="list">
+  <div class="loading">Loading houses near you...</div>
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>Login with M-Pesa Number</span>
+      <span onclick="closeModal('loginModal')" style="cursor:pointer">✕</span>
     </div>
-
-    <!-- HOUSES TAB -->
-    <div id="housesTab" class="tab-content active">
-      <div class="caretaker-banner">
-        <h4><i class="fa-solid fa-house-chimney-user"></i> Are you a Caretaker?</h4>
-        <p>List unlimited houses for Ksh 300/mo + Get Verified Badge</p>
-        <button class="btn" style="background:white; color:#1e40af;" onclick="showCaretakerModal()"><i class="fa-solid fa-rocket"></i> Start Listing</button>
+    <div class="modal-body">
+      <div id="loginStep1">
+        <p style="font-size:14px;color:#666">We’ll send a 4-digit code to verify it’s you</p>
+        <input id="loginPhone" class="input" type="tel" placeholder="0712 345 678">
+        <button id="sendOtpBtn" class="btn" style="width:100%" onclick="sendOTP()">Send Code</button>
       </div>
-      
-      <div class="card">
-        <div class="filters">
-          <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="searchInput" placeholder="Search by area or type..." onkeyup="filterHouses()">
-          </div>
-          <div class="price-filter">
-            <label><i class="fa-solid fa-coins"></i> Max Price per Month</label>
-            <div class="price-range">
-              <input type="range" id="priceSlider" min="5000" max="50000" step="1000" value="50000" oninput="updatePriceFilter()">
-              <span id="priceValue">Ksh 50,000</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="card"><div id="map"></div></div>
-      
-      <div class="section-title"><i class="fa-solid fa-circle-play" style="color:var(--pk-green);"></i> How Pata Keja Works</div>
-      <div class="card video-container">
-        <video controls poster="https://via.placeholder.com/600x300/10b981/ffffff?text=Pata+Keja+Demo"><source src="" type="video/mp4"></video>
-        <p class="caption"><i class="fa-solid fa-bullhorn"></i> Caretakers: Upload 15-sec tours to get 3x more views</p>
-      </div>
-      
-      <div class="section-title"><i class="fa-solid fa-location-dot" style="color:var(--pk-green);"></i> <span id="houseCount">Houses Near You</span></div>
-      <div class="card">
-        <div id="list"></div>
-        <div id="loading" class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading houses...</div>
-        <div id="noResults" class="no-results" style="display:none;"><i class="fa-solid fa-house-circle-xmark" style="font-size:40px; color:#d1d5db; margin-bottom:12px;"></i><p>No houses found</p><p style="font-size:12px; margin-top:4px;">Try adjusting your filters</p></div>
-      </div>
-    </div>
-
-    <!-- JOBS TAB -->
-    <div id="jobsTab" class="tab-content">
-      <div class="owner-banner">
-        <h4><i class="fa-solid fa-user-tie"></i> Are you a House Owner?</h4>
-        <p>Post jobs for caretakers - Cleaning, Security, Repairs</p>
-        <button class="btn" style="background:white; color:#ea580c;" onclick="showPostJobModal()"><i class="fa-solid fa-plus"></i> Post Kazi</button>
-      </div>
-      <div class="section-title"><i class="fa-solid fa-briefcase" style="color:var(--pk-orange);"></i> <span id="jobCount">Available Kazi</span></div>
-      <div class="card">
-        <div id="jobList"></div>
-        <div id="noJobs" class="no-results" style="display:none;"><i class="fa-solid fa-briefcase" style="font-size:40px; color:#d1d5db; margin-bottom:12px;"></i><p>No kazi available</p><p style="font-size:12px; margin-top:4px;">Check back later</p></div>
+      <div id="loginStep2" style="display:none">
+        <p style="font-size:14px;color:#666">Code sent to <span id="phoneDisplay"></span></p>
+        <input id="otpInput" class="input" type="tel" maxlength="4" placeholder="4921" style="text-align:center;letter-spacing:8px">
+        <button id="verifyBtn" class="btn" style="width:100%" onclick="verifyOTP()">Verify & Continue</button>
+        <p id="loginStatus" style="font-size:14px;margin-top:12px;color:#666"></p>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Payment Modal - STK TO 0797740645 HIDDEN -->
-  <div id="paymentModal" class="modal">
-    <div class="modal-content">
-      <h3><i class="fa-solid fa-lock-open"></i> Unlock Contact</h3>
-      <p>Pay Ksh 100 to view caretaker details</p>
-      <div style="background:#f0fdf4; padding:16px; border-radius:12px; text-align:center; margin:16px 0;">
-        <p style="font-size:13px; color:var(--pk-gray); margin-bottom:4px;">AMOUNT</p>
-        <h2 style="color:var(--pk-dark); margin:0; font-size:32px;">Ksh 100</h2>
-        <p style="font-size:12px; color:var(--pk-green); margin-top:8px;"><i class="fa-solid fa-shield-halved"></i> Secure M-Pesa Payment</p>
+<!-- Payment Modal -->
+<div id="payModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>Unlock Contact</span>
+      <span onclick="closeModal('payModal')" style="cursor:pointer">✕</span>
+    </div>
+    <div class="modal-body">
+      <p>Pay <b>100 KES</b> via M-Pesa to view caretaker phone</p>
+      <p id="payPhone" style="font-size:14px;color:#666;margin:8px 0"></p>
+      <button id="payBtn" class="btn" style="width:100%" onclick="initiateSTK()">Pay 100 KES</button>
+      <p id="payStatus" style="font-size:14px;margin-top:12px;color:#666"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Post Modal -->
+<div id="postModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>List House/Shop - 300 KES</span>
+      <span onclick="closeModal('postModal')" style="cursor:pointer">✕</span>
+    </div>
+    <div class="modal-body">
+      <input id="postTitle" class="input" placeholder="Title: 2BR in Kilimani">
+      <select id="postType" class="input">
+        <option value="house">House</option>
+        <option value="shop">Shop</option>
+        <option value="single">Single Room</option>
+      </select>
+      <input id="postPrice" class="input" type="number" placeholder="Price per month">
+      <input id="postEstate" class="input" placeholder="Estate: Kilimani">
+      <input id="postBeds" class="input" placeholder="Beds: 2br, bedsitter, shop">
+      <input id="postImages" class="input" type="file" accept="image/*" multiple>
+      <input id="postVideo" class="input" type="file" accept="video/mp4">
+      <p style="font-size:12px;color:#666">Images: max 3. Video: 15sec max</p>
+      <button class="btn" style="width:100%" onclick="createListing()">Pay 300 KES & Post</button>
+      <p id="postStatus" style="font-size:14px;margin-top:12px;color:#666"></p>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// REPLACE THESE 3 LINES WITH YOUR ACTUAL VALUES
+const API_URL = 'https://your-render-url.onrender.com';
+const SUPABASE_URL = 'https://your-project.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let map, markers = [], currentListing = null, currentUser = null;
+let filters = {type:'all',beds:'all'};
+let allListings = [];
+let pendingAction = null;
+
+window.addEventListener('load', async ()=>{
+  currentUser = JSON.parse(localStorage.getItem('patakeja_user')||'null');
+  updateHeader();
+  await loadListings();
+  initMap();
+});
+
+function showError(msg){
+  const el = document.getElementById('error');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=>el.style.display='none',5000);
+}
+
+function updateHeader(){
+  const el = document.getElementById('headerRight');
+  if(currentUser){
+    el.innerHTML = `
+      <span style="font-size:14px;margin-right:8px">${currentUser.phone}</span>
+      <button class="btn-outline" onclick="showPostModal()">Post</button>
+    `;
+  }else{
+    el.innerHTML = `<button class="btn-outline" onclick="showLogin()">Login</button>`;
+  }
+}
+
+function requireLogin(cb){
+  if(currentUser){ cb(); }
+  else{ pendingAction = cb; showLogin(); }
+}
+
+function showLogin(){ document.getElementById('loginModal').classList.add('active'); }
+
+async function sendOTP(){
+  const phone = document.getElementById('loginPhone').value.replace(/\s/g,'');
+  const btn = document.getElementById('sendOtpBtn');
+  if(phone.length<10){ alert('Enter valid number'); return; }
+
+  btn.disabled = true; btn.textContent = 'Sending...';
+
+  try{
+    await fetch(`${API_URL}/api/auth/send-otp`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({phone})
+    });
+    document.getElementById('loginStep1').style.display='none';
+    document.getElementById('loginStep2').style.display='block';
+    document.getElementById('phoneDisplay').textContent = phone;
+  }catch(e){
+    showError('Failed to send code');
+    btn.disabled = false; btn.textContent = 'Send Code';
+  }
+}
+
+async function verifyOTP(){
+  const phone = document.getElementById('loginPhone').value.replace(/\s/g,'');
+  const otp = document.getElementById('otpInput').value;
+  const status = document.getElementById('loginStatus');
+
+  try{
+    const res = await fetch(`${API_URL}/api/auth/verify-otp`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({phone, otp})
+    });
+    const data = await res.json();
+    if(!data.success) throw new Error(data.message);
+
+    currentUser = data.user;
+    localStorage.setItem('patakeja_user', JSON.stringify(currentUser));
+    status.textContent = '✓ Logged in'; status.style.color='var(--green)';
+
+    setTimeout(()=>{
+      closeModal('loginModal');
+      updateHeader();
+      if(pendingAction) pendingAction();
+      pendingAction = null;
+    },800);
+  }catch(e){
+    status.textContent = e.message||'Wrong code'; status.style.color='#C62828';
+  }
+}
+
+async function loadListings(){
+  try{
+    const res = await fetch(`${API_URL}/api/listings`);
+    allListings = await res.json();
+    renderListings();
+  }catch(e){
+    document.getElementById('list').innerHTML = '<div class="loading">Failed to load. Check API_URL.</div>';
+  }
+}
+
+function initMap(){
+  try{
+    map = L.map('map').setView([-1.2921, 36.8219], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    renderMapPins();
+  }catch(e){ showError('Map failed'); }
+}
+
+function renderListings(){
+  const list = document.getElementById('list');
+  markers.forEach(m=>map.removeLayer(m)); markers = [];
+
+  let filtered = allListings.filter(l=>{
+    if(filters.type!=='all' && l.type!==filters.type) return false;
+    if(filters.beds!=='all' && l.beds!==filters.beds) return false;
+    return true;
+  });
+
+  if(filtered.length===0){
+    list.innerHTML = '<div class="loading">No listings match filters</div>'; return;
+  }
+
+  list.innerHTML = filtered.map(l=>`
+    <div class="card ${l.boosted_until&&new Date(l.boosted_until)>new Date()?'boosted':''}" onclick="viewListing(${l.id})">
+      <img src="${l.images?.[0]||'https://via.placeholder.com/400x160'}" class="card-img">
+      ${l.video_url?'<div class="play-icon">▶</div>':''}
+      <div class="card-body">
+        <div class="price">KES ${l.price.toLocaleString()}/mo</div>
+        <div class="meta">${l.title}</div>
+        <div class="meta">${l.estate} • ${l.beds}</div>
+        ${l.verified?'<span class="badge">✓ Verified</span>':''}
+        ${l.boosted_until&&new Date(l.boosted_until)>new Date()?'<span class="badge boosted">★ Boosted</span>':''}
       </div>
-      <label>Enter your M-Pesa number:</label>
-      <input type="tel" id="mpesaNumber" placeholder="07XX XXX XXX" maxlength="10">
-      <button class="btn btn-primary" onclick="initiateSTKPush()"><i class="fa-solid fa-mobile-screen"></i> Pay with M-Pesa</button>
-      <button class="btn modal-close" onclick="closeModal()">Cancel</button>
-      <p style="font-size:11px; color:var(--pk-gray); text-align:center; margin-top:12px;">You'll receive an M-Pesa prompt on your phone</p>
     </div>
-  </div>
+  `).join('');
 
-  <!-- Caretaker Modal -->
-  <div id="caretakerModal" class="modal">
-    <div class="modal-content">
-      <h3><i class="fa-solid fa-house-chimney-user"></i> Caretaker Portal</h3>
-      <p>List unlimited houses for Ksh 300/month<br><span style="color:var(--pk-blue); font-weight:600;">+ Get Verified Badge <i class="fa-solid fa-circle-check"></i></span></p>
-      <input type="tel" id="caretakerPhone" placeholder="Phone: 07XX XXX XXX" maxlength="10">
-      <button class="btn btn-primary" onclick="caretakerLogin()"><i class="fa-solid fa-mobile-screen"></i> Pay Ksh 300 & Login</button>
-      <button class="btn modal-close" onclick="closeCaretakerModal()">Cancel</button>
-    </div>
-  </div>
+  renderMapPins(filtered);
+}
 
-  <!-- Post Job Modal -->
-  <div id="postJobModal" class="modal">
-    <div class="modal-content">
-      <h3><i class="fa-solid fa-briefcase"></i> Post Kazi</h3>
-      <p>House owners: Post jobs for caretakers</p>
-      <input type="text" id="jobTitle" placeholder="Job Title: Clean Compound">
-      <textarea id="jobDesc" placeholder="Description: Sweep, mop, empty bins..." rows="3"></textarea>
-      <input type="number" id="jobPay" placeholder="Pay: Ksh 500">
-      <select id="jobType"><option value="one-time">One-time Task</option><option value="full-time">Full-time Job</option></select>
-      <input type="text" id="jobLocation" placeholder="Location: Kilimani">
-      <input type="text" id="ownerName" placeholder="Your Name">
-      <input type="tel" id="ownerPhone" placeholder="Your Phone: 07XX XXX XXX">
-      <button class="btn btn-orange" onclick="postJob()"><i class="fa-solid fa-paper-plane"></i> Post Kazi Free</button>
-      <button class="btn modal-close" onclick="closePostJobModal()">Cancel</button>
-    </div>
-  </div>
+function renderMapPins(listings=allListings){
+  listings.forEach(l=>{
+    const color = l.type==='shop'?'purple':l.type==='single'?'blue':'var(--green)';
+    const icon = L.divIcon({html:`<div style="background:${color};width:24px;height:24px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`});
+    const marker = L.marker([l.lat,l.lng],{icon}).addTo(map).bindPopup(l.title);
+    markers.push(marker);
+  });
+}
 
-  <!-- Admin Modal -->
-  <div id="adminModal" class="modal">
-    <div class="modal-content" style="max-width:600px;">
-      <h3><i class="fa-solid fa-shield-halved"></i> Admin Dashboard</h3>
-      <div id="adminLogin" style="display:block;">
-        <p>Enter admin password to manage houses & jobs</p>
-        <input type="password" id="adminPassword" placeholder="Admin Password">
-        <button class="btn btn-primary" onclick="adminLogin()">Login</button>
-        <button class="btn modal-close" onclick="closeAdminModal()">Cancel</button>
-      </div>
-      <div id="adminPanel" style="display:none;">
-        <div style="display:flex; gap:8px; margin-bottom:16px;">
-          <button class="btn btn-primary" onclick="showAdminTab('houses')"><i class="fa-solid fa-house"></i> Houses</button>
-          <button class="btn btn-secondary" onclick="showAdminTab('jobs')"><i class="fa-solid fa-briefcase"></i> Jobs</button>
-        </div>
-        <div id="adminHouses">
-          <button class="btn btn-primary" onclick="showAddHouseForm()" style="margin-bottom:16px;"><i class="fa-solid fa-plus"></i> Add New House</button>
-          <div id="addHouseForm" style="display:none; background:#f9fafb; padding:16px; border-radius:12px; margin-bottom:16px;">
-            <h4 style="margin-bottom:12px;">Add House</h4>
-            <input type="text" id="newTitle" placeholder="Title: 1BR Apartment - CBD">
-            <input type="number" id="newPrice" placeholder="Price: 25000">
-            <input type="text" id="newLocation" placeholder="Location: Nairobi CBD">
-            <input type="number" id="newLat" placeholder="Latitude: -1.2921" step="any">
-            <input type="number" id="newLng" placeholder="Longitude: 36.8219" step="any">
-            <input type="text" id="newImg" placeholder="Image URL">
-            <input type="text" id="newCaretaker" placeholder="Caretaker Name">
-            <input type="tel" id="newPhone" placeholder="Phone: 0722123456">
-            <input type="tel" id="newWhatsApp" placeholder="WhatsApp: 254722123456">
-            <label style="display:flex; align-items:center; gap:8px; margin:12px 0;"><input type="checkbox" id="newVerified"> Verified Caretaker</label>
-            <button class="btn btn-primary" onclick="addHouse()">Save House</button>
-            <button class="btn modal-close" onclick="hideAddHouseForm()">Cancel</button>
-          </div>
-          <div style="max-height:400px; overflow-y:auto;"><table class="admin-table"><thead><tr><th>House</th><th>Price</th><th>Caretaker</th><th>Action</th></tr></thead><tbody id="adminHouseList"></tbody></table></div>
-        </div>
-        <div id="adminJobs" style="display:none;"><div style="max-height:400px; overflow-y:auto;"><table class="admin-table"><thead><tr><th>Job</th><th>Pay</th><th>Owner</th><th>Action</th></tr></thead><tbody id="adminJobList"></tbody></table></div></div>
-        <button class="btn modal-close" onclick="closeAdminModal()" style="margin-top:16px;">Close</button>
-      </div>
-    </div>
-  </div>
+function setFilter(key,val){
+  filters[key]=val;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  event.target.classList.add('active');
+  renderListings();
+}
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // CONFIG: REPLACE WITH YOUR BACKEND URL - 0797740645 IS SET IN BACKEND ONLY
-    const MPESA_API = {
-      STK_PUSH: 'https://your-backend.onrender.com/stkpush',  // ← CHANGE THIS
-      QUERY_STATUS: 'https://your-backend.onrender.com/mpesa/query', // ← CHANGE THIS
-      SEND_SMS: 'https://your-backend.onrender.com/sms/send' // Optional
+async function viewListing(id){
+  currentListing = allListings.find(l=>l.id===id);
+  requireLogin(async ()=>{
+    const res = await fetch(`${API_URL}/api/unlocks/check?user_id=${currentUser.id}&listing_id=${id}`);
+    const {unlocked, phone} = await res.json();
+    if(unlocked){
+      alert(`Caretaker: ${phone}`);
+    }else{
+      document.getElementById('payPhone').textContent = `Your number: ${currentUser.phone}`;
+      document.getElementById('payModal').classList.add('active');
+    }
+  });
+}
+
+async function initiateSTK(){
+  const btn = document.getElementById('payBtn');
+  const status = document.getElementById('payStatus');
+  btn.disabled = true; btn.textContent = 'Sending M-Pesa...';
+  status.textContent = 'Check your phone for M-Pesa prompt';
+
+  try{
+    const res = await fetch(`${API_URL}/api/pochi/stkpush`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        phone: currentUser.phone,
+        amount: 100,
+        reference: `UNLOCK_${currentListing.id}`,
+        description: 'Pata Keja Contact Unlock',
+        user_id: currentUser.id,
+        listing_id: currentListing.id
+      })
+    });
+    const data = await res.json();
+    if(!data.success) throw new Error(data.message);
+    status.textContent = '✓ Payment sent! You’ll get SMS when confirmed.';
+    status.style.color = 'var(--green)';
+  }catch(e){
+    status.textContent = 'Payment failed. Try again.'; status.style.color='#C62828';
+    btn.disabled = false; btn.textContent = 'Pay 100 KES';
+  }
+}
+
+function showPostModal(){
+  requireLogin(()=> document.getElementById('postModal').classList.add('active'));
+}
+
+async function createListing(){
+  const status = document.getElementById('postStatus');
+  status.textContent = 'Uploading...';
+
+  try{
+    const imgFiles = document.getElementById('postImages').files;
+    const imageUrls = [];
+    for(let file of imgFiles){
+      const {data, error} = await supabase.storage.from('listing-images').upload(`${Date.now()}-${file.name}`, file);
+      if(error) throw error;
+      const {data:{publicUrl}} = supabase.storage.from('listing-images').getPublicUrl(data.path);
+      imageUrls.push(publicUrl);
+    }
+
+    let videoUrl = null;
+    const videoFile = document.getElementById('postVideo').files[0];
+    if(videoFile){
+      const {data, error} = await supabase.storage.from('listing-videos').upload(`${Date.now()}-${videoFile.name}`, videoFile);
+      if(!error) videoUrl = supabase.storage.from('listing-videos').getPublicUrl(data.path).data.publicUrl;
+    }
+
+    const lat = -1.2921 + (Math.random()-0.5)*0.1;
+    const lng = 36.8219 + (Math.random()-0.5)*0.1;
+
+    const listing = {
+      user_id: currentUser.id,
+      type: document.getElementById('postType').value,
+      title: document.getElementById('postTitle').value,
+      price: parseInt(document.getElementById('postPrice').value),
+      estate: document.getElementById('postEstate').value,
+      beds: document.getElementById('postBeds').value,
+      lat, lng, images: imageUrls, video_url: videoUrl
     };
 
-    let map, markers = [], allHouses = [], allJobs = JSON.parse(localStorage.getItem('pataKejaJobs') || '[]');
-    let currentMaxPrice = 50000, currentUnlockId = null;
-    let unlockedHouses = JSON.parse(localStorage.getItem('unlockedHouses') || '[]');
-    let savedHouses = JSON.parse(localStorage.getItem('pataKejaHouses') || 'null');
-    
-    const defaultHouses = [
-      { id: 1, lat: -1.2921, lng: 36.8219, title: "1BR Apartment - CBD", price: 25000, priceText: "Ksh 25,000/mo", location: "Nairobi CBD", img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop", caretaker: "John Mwangi", phone: "0722123456", whatsapp: "254722123456", verified: true },
-      { id: 2, lat: -1.3001, lng: 36.7845, title: "Bedsitter - Kilimani", price: 15000, priceText: "Ksh 15,000/mo", location: "Kilimani", img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop", caretaker: "Mary Wanjiku", phone: "0711987654", whatsapp: "254711987654"
-               const card = document.createElement('div'); card.className = 'job-card';
-        card.innerHTML = `
-          <div class="house-main">
-            <div class="house-thumb" style="background:var(--pk-orange); display:flex; align-items:center; justify-content:center; color:white; font-size:24px;"><i class="fa-solid fa-briefcase"></i></div>
-            <div class="house-info">
-              <h4>${job.title} <span class="job-badge">${job.type === 'full-time' ? 'Full-time' : 'One-time'}</span></h4>
-              <p style="color:var(--pk-orange);">Ksh ${job.pay.toLocaleString()}</p>
-              <span><i class="fa-solid fa-location-dot"></i> ${job.location}</span>
-              <p style="font-size:13px; color:var(--pk-gray); margin:8px 0;">${job.desc}</p>
-              <div class="job-meta">
-                <span><i class="fa-solid fa-user"></i> ${job.owner}</span>
-                <span><i class="fa-solid fa-calendar"></i> ${job.posted}</span>
-              </div>
-              <div class="house-actions">
-                <button class="btn btn-whatsapp" onclick="applyJob('${job.ownerPhone}', '${job.title}')"><i class="fa-brands fa-whatsapp"></i> Apply Now</button>
-              </div>
-            </div>
-          </div>`;
-        jobList.appendChild(card);
-      });
-      updateJobCount(allJobs.length);
-    }
+    const res = await fetch(`${API_URL}/api/listings`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(listing)
+    });
 
-    function unlockContact(id){ currentUnlockId = id; document.getElementById('paymentModal').classList.add('show'); }
-    function openWhatsApp(number){ window.open(`https://wa.me/${number}?text=Hi, I'm interested in your house on Pata Keja`, '_blank'); }
-    function showCaretakerModal(){ document.getElementById('caretakerModal').classList.add('show'); }
-    function caretakerLogin(){
-      const phone = document.getElementById('caretakerPhone').value;
-      if(phone.length !== 10 || !phone.startsWith('07')){ alert('Enter valid phone: 07XX XXX XXX'); return; }
-      setTimeout(() => { alert('Payment successful! Welcome to Pata Keja Caretaker Portal 🎉\n\nYou can now list houses + get Verified Badge.'); closeCaretakerModal(); }, 1000);
-    }
-    function closeModal(){ document.getElementById('paymentModal').classList.remove('show'); document.getElementById('mpesaNumber').value = ''; }
-    function closeCaretakerModal(){ document.getElementById('caretakerModal').classList.remove('show'); document.getElementById('caretakerPhone').value = ''; }
-    function showPostJobModal(){ document.getElementById('postJobModal').classList.add('show'); }
-    function closePostJobModal(){ document.getElementById('postJobModal').classList.remove('show'); }
-    function postJob(){
-      const newJob = {
-        id: Date.now(), title: document.getElementById('jobTitle').value, desc: document.getElementById('jobDesc').value,
-        pay: parseInt(document.getElementById('jobPay').value), type: document.getElementById('jobType').value,
-        location: document.getElementById('jobLocation').value, owner: document.getElementById('ownerName').value || 'House Owner',
-        ownerPhone: document.getElementById('ownerPhone').value, posted: new Date().toLocaleDateString()
-      };
-      if(!newJob.title || !newJob.pay || !newJob.ownerPhone){ alert('Please fill all required fields'); return; }
-      allJobs.push(newJob); localStorage.setItem('pataKejaJobs', JSON.stringify(allJobs));
-      closePostJobModal(); renderJobs(); alert('Kazi posted successfully! Caretakers can now apply 🎉');
-    }
-    function applyJob(ownerPhone, jobTitle){ window.open(`https://wa.me/254${ownerPhone.substring(1)}?text=Hi, I'm interested in the ${jobTitle} job on Pata Keja`, '_blank'); }
-    function showAdminLogin(){ document.getElementById('adminModal').classList.add('show'); document.getElementById('adminLogin').style.display = 'block'; document.getElementById('adminPanel').style.display = 'none'; }
-    function adminLogin(){
-      const pass = document.getElementById('adminPassword').value;
-      if(pass === 'patakeja2026'){ document.getElementById('adminLogin').style.display = 'none'; document.getElementById('adminPanel').style.display = 'block'; renderAdminTable(); renderAdminJobTable(); } 
-      else { alert('Wrong password!'); }
-    }
-    function showAdminTab(tab){ document.getElementById('adminHouses').style.display = tab === 'houses' ? 'block' : 'none'; document.getElementById('adminJobs').style.display = tab === 'jobs' ? 'block' : 'none'; }
-    function renderAdminTable(){
-      const tbody = document.getElementById('adminHouseList'); tbody.innerHTML = '';
-      houses.forEach(house => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${house.title}</td><td>${house.priceText}</td><td>${house.caretaker} ${house.verified ? '<i class="fa-solid fa-circle-check" style="color:#3b82f6;"></i>' : ''}</td><td><button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteHouse(${house.id})"><i class="fa-solid fa-trash"></i></button></td>`;
-        tbody.appendChild(row);
-      });
-    }
-    function renderAdminJobTable(){
-      const tbody = document.getElementById('adminJobList'); tbody.innerHTML = '';
-      allJobs.forEach(job => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${job.title}</td><td>Ksh ${job.pay.toLocaleString()}</td><td>${job.owner}</td><td><button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteJob(${job.id})"><i class="fa-solid fa-trash"></i></button></td>`;
-        tbody.appendChild(row);
-      });
-    }
-    function showAddHouseForm(){ document.getElementById('addHouseForm').style.display = 'block'; }
-    function hideAddHouseForm(){ document.getElementById('addHouseForm').style.display = 'none'; }
-    function addHouse(){
-      const newHouse = {
-        id: Date.now(), title: document.getElementById('newTitle').value, price: parseInt(document.getElementById('newPrice').value),
-        priceText: `Ksh ${parseInt(document.getElementById('newPrice').value).toLocaleString()}/mo`, location: document.getElementById('newLocation').value,
-        lat: parseFloat(document.getElementById('newLat').value), lng: parseFloat(document.getElementById('newLng').value),
-        img: document.getElementById('newImg').value, caretaker: document.getElementById('newCaretaker').value,
-        phone: document.getElementById('newPhone').value, whatsapp: document.getElementById('newWhatsApp').value, verified: document.getElementById('newVerified').checked
-      };
-      houses.push(newHouse); localStorage.setItem('pataKejaHouses', JSON.stringify(houses)); allHouses = [...houses];
-      hideAddHouseForm(); renderAdminTable(); filterHouses(); alert('House added successfully!');
-    }
-    function deleteHouse(id){ if(confirm('Delete this house?')){ houses = houses.filter(h => h.id !== id); localStorage.setItem('pataKejaHouses', JSON.stringify(houses)); allHouses = [...houses]; renderAdminTable(); filterHouses(); } }
-    function deleteJob(id){ if(confirm('Delete this job?')){ allJobs = allJobs.filter(j => j.id !== id); localStorage.setItem('pataKejaJobs', JSON.stringify(allJobs)); renderAdminJobTable(); renderJobs(); } }
-    function closeAdminModal(){ document.getElementById('adminModal').classList.remove('show'); document.getElementById('adminPassword').value = ''; }
-    function scrollToHouse(id){ document.querySelectorAll('.house-card').forEach(card => { card.classList.remove('highlight'); }); const card = document.getElementById(`house-${id}`); if(card){ card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.classList.add('highlight'); setTimeout(() => card.classList.remove('highlight'), 2000); } }
-    function getDirections(lat, lng){ window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank'); }
-    function updatePriceFilter(){ currentMaxPrice = parseInt(document.getElementById('priceSlider').value); document.getElementById('priceValue').textContent = `Ksh ${currentMaxPrice.toLocaleString()}`; filterHouses(); }
-    function filterHouses(){
-      const query = document.getElementById('searchInput').value.toLowerCase();
-      const filtered = allHouses.filter(house => house.price <= currentMaxPrice && (house.title.toLowerCase().includes(query) || house.location.toLowerCase().includes(query)));
-      renderListings(filtered); renderMapPins(filtered); updateHouseCount(filtered.length);
-    }
-    function updateHouseCount(count){ document.getElementById('houseCount').textContent = count === 1 ? `1 House Found` : `${count} Houses Found`; }
-    function updateJobCount(count){ document.getElementById('jobCount').textContent = count === 1 ? `1 Kazi Available` : `${count} Kazi Available`; }
-    document.addEventListener('DOMContentLoaded', initMap);
-  </script>
+    if(!res.ok) throw new Error('Failed to create');
+
+    status.textContent = '✓ Posted! Pay 300 KES via STK to activate.';
+    status.style.color = 'var(--green)';
+    setTimeout(()=>{ closeModal('postModal'); loadListings(); },1500);
+
+  }catch(e){
+    status.textContent = e.message; status.style.color='#C62828';
+  }
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+</script>
+
 </body>
-</html>
+        </html>
