@@ -3,69 +3,248 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pata Keja</title>
+  <title>Pata Keja - Find Your Next Home in Nairobi</title>
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
+  <!-- Google Fonts: Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
   <style>
-    body {
-      font-family: Arial, sans-serif;
+    :root {
+      --pk-green: #10b981;
+      --pk-dark: #065f46;
+      --pk-light: #d1fae5;
+      --pk-gray: #6b7280;
+    }
+    
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      background: #f5f5f5;
     }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f9fafb;
+      color: #111827;
+    }
+    
     .header {
-      background: #10b981;
+      background: linear-gradient(135deg, var(--pk-green), var(--pk-dark));
       color: white;
-      padding: 15px;
-      font-size: 20px;
-      font-weight: bold;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .logo img {
+      height: 36px;
+      width: auto;
+    }
+    
+    .logo-text {
+      font-size: 22px;
+      font-weight: 700;
+    }
+    
+    .btn-login {
+      background: white;
+      color: var(--pk-dark);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+    
     .container {
-      padding: 15px;
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
     }
+    
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    
     #map {
-      height: 400px;
+      height: 320px;
+      width: 100%;
+      z-index: 1;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 24px 0 12px 4px;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .video-container {
+      padding: 16px;
+    }
+    
+    video {
       width: 100%;
       border-radius: 12px;
-      margin: 10px 0;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
+    
+    .caption {
+      font-size: 13px;
+      color: var(--pk-gray);
+      margin-top: 8px;
+      text-align: center;
+    }
+    
     .house-card {
-      background: white;
       padding: 12px;
-      border-radius: 8px;
-      margin: 10px 0;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .house-card:last-child {
+      border-bottom: none;
+    }
+    
+    .house-thumb {
+      width: 80px;
+      height: 60px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    
+    .house-info {
+      flex: 1;
+    }
+    
+    .house-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .house-info p {
+      font-size: 14px;
+      color: var(--pk-green);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .house-info span {
+      font-size: 12px;
+      color: var(--pk-gray);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--pk-gray);
+    }
+    
+    /* Custom map pin with photo */
+    .photo-pin {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      object-fit: cover;
+    }
+    
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      padding: 0;
+    }
+    
+    .leaflet-popup-content {
+      margin: 0;
+      width: 200px !important;
+    }
+    
+    .popup-img {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 12px 12px 0 0;
+    }
+    
+    .popup-info {
+      padding: 12px;
+      font-family: 'Poppins';
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <span>Pata Keja</span>
-    <span style="font-size:14px; font-weight:normal;">Login</span>
+    <div class="logo">
+      <!-- CHANGE THIS to your logo.png -->
+      <img src="logo.png" alt="Pata Keja Logo">
+      <span class="logo-text">Pata Keja</span>
+    </div>
+    <button class="btn-login">Login</button>
   </div>
 
   <div class="container">
-    <!-- Map goes here -->
-    <div id="map"></div>
+    <!-- Map Card -->
+    <div class="card">
+      <div id="map"></div>
+    </div>
     
-    <!-- Video section -->
-    <h3>See how Pata Keja works in 60 sec</h3>
-    <video width="100%" controls style="border-radius: 8px;">
-      <source src="" type="video/mp4">
-      Your browser does not support video.
-    </video>
-    <p style="font-size: 14px; color: #555;">Caretakers: Upload 15-sec video tours to get 3x more views</p>
+    <!-- Video Section -->
+    <div class="section-title">
+      <i class="fa-solid fa-circle-play" style="color:var(--pk-green);"></i>
+      How Pata Keja Works
+    </div>
+    <div class="card video-container">
+      <video controls poster="https://via.placeholder.com/600x300/10b981/ffffff?text=Pata+Keja+Demo">
+        <source src="" type="video/mp4">
+      </video>
+      <p class="caption">
+        <i class="fa-solid fa-bullhorn"></i> 
+        Caretakers: Upload 15-sec tours to get 3x more views
+      </p>
+    </div>
     
-    <!-- Houses list -->
-    <h3>Houses near you</h3>
-    <div id="list"></div>
-    <p id="loading" style="text-align:center; color:#666;">Loading houses near you...</p>
+    <!-- Houses List -->
+    <div class="section-title">
+      <i class="fa-solid fa-location-dot" style="color:var(--pk-green);"></i>
+      Houses Near You
+    </div>
+    <div class="card">
+      <div id="list"></div>
+      <div id="loading" class="loading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading houses...
+      </div>
+    </div>
   </div>
 
   <!-- Leaflet JS -->
@@ -75,37 +254,74 @@
     let map;
     let markers = [];
     
-    // Sample house data for Nairobi
+    // REPLACE THIS with your real houses + photos
     const houses = [
-      { lat: -1.2921, lng: 36.8219, title: "1BR in CBD", price: "Ksh 25,000" },
-      { lat: -1.3001, lng: 36.7845, title: "Bedsitter Kilimani", price: "Ksh 15,000" },
-      { lat: -1.2676, lng: 36.8118, title: "2BR Westlands", price: "Ksh 45,000" },
-      { lat: -1.3032, lng: 36.8770, title: "1BR Buruburu", price: "Ksh 18,000" }
+      { 
+        lat: -1.2921, 
+        lng: 36.8219, 
+        title: "1BR Apartment - CBD", 
+        price: "Ksh 25,000/mo",
+        location: "Nairobi CBD",
+        img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop"
+      },
+      { 
+        lat: -1.3001, 
+        lng: 36.7845, 
+        title: "Bedsitter - Kilimani", 
+        price: "Ksh 15,000/mo",
+        location: "Kilimani",
+        img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop"
+      },
+      { 
+        lat: -1.2676, 
+        lng: 36.8118, 
+        title: "2BR - Westlands", 
+        price: "Ksh 45,000/mo",
+        location: "Westlands",
+        img: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop"
+      },
+      { 
+        lat: -1.3032, 
+        lng: 36.8770, 
+        title: "1BR - Buruburu", 
+        price: "Ksh 18,000/mo",
+        location: "Buruburu Phase 5",
+        img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=300&fit=crop"
+      }
     ];
 
     function initMap(){
-      // Create map centered on Nairobi
       map = L.map('map').setView([-1.2921, 36.8219], 12);
       
-      // Add OpenStreetMap tiles
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
+        attribution: '© OpenStreetMap'
       }).addTo(map);
       
-      // Add house markers
-      renderMapPins();
-      renderListings();
-      document.getElementById('loading').style.display = 'none';
-    }
-
-    function renderMapPins(){
+      // Add house markers with photo pins
       houses.forEach(house => {
-        const marker = L.marker([house.lat, house.lng])
+        // Custom photo pin
+        const photoIcon = L.divIcon({
+          html: `<img src="${house.img}" class="photo-pin">`,
+          iconSize: [48, 48],
+          className: ''
+        });
+        
+        const marker = L.marker([house.lat, house.lng], {icon: photoIcon})
           .addTo(map)
-          .bindPopup(`<b>${house.title}</b><br>${house.price}`);
+          .bindPopup(`
+            <img src="${house.img}" class="popup-img">
+            <div class="popup-info">
+              <b style="color:#065f46; font-size:14px;">${house.title}</b><br>
+              <span style="color:#10b981; font-weight:600; font-size:13px;">${house.price}</span><br>
+              <span style="color:#6b7280; font-size:12px;"><i class="fa-solid fa-location-dot"></i> ${house.location}</span>
+            </div>
+          `);
         markers.push(marker);
       });
+      
+      renderListings();
+      document.getElementById('loading').style.display = 'none';
     }
 
     function renderListings(){
@@ -114,13 +330,19 @@
       houses.forEach(house => {
         const card = document.createElement('div');
         card.className = 'house-card';
-        card.innerHTML = `<b>${house.title}</b><br>${house.price}`;
+        card.innerHTML = `
+          <img src="${house.img}" class="house-thumb">
+          <div class="house-info">
+            <h4>${house.title}</h4>
+            <p>${house.price}</p>
+            <span><i class="fa-solid fa-location-dot"></i> ${house.location}</span>
+          </div>
+        `;
         list.appendChild(card);
       });
     }
 
-    // Load map when page is ready
     document.addEventListener('DOMContentLoaded', initMap);
   </script>
 </body>
-</html>
+  </html>
