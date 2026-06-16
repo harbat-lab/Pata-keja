@@ -143,7 +143,7 @@ body{background:var(--gray);color:var(--dark)}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// REPLACE THESE 3 LINES WITH YOUR ACTUAL VALUES
+// YOUR ACTUAL VALUES
 const API_URL = 'https://pata-keja-oo6v.onrender.com';
 const SUPABASE_URL = 'https://edboplgobqnjlncplrhq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYm9wbGdvYnFuamxuY3BscmhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MzQ0MzAsImV4cCI6MjA5NzAxMDQzMH0.1o8FH7jaQik7VZeE3iSIhd_Qdou-tTsYqdq1ShY3dqw';
@@ -238,12 +238,36 @@ async function verifyOTP(){
 }
 
 async function loadListings(){
-  try{
-    const res = await fetch(`${API_URL}/api/listings`);
-    allListings = await res.json();
+  const listDiv = document.getElementById('list');
+  listDiv.innerHTML = '<div class="loading">Loading houses...</div>';
+
+  try {
+    console.log('Fetching from Supabase:', SUPABASE_URL);
+
+    const { data, error } = await supabase
+     .from('listings')
+     .select('*')
+     .order('created_at', { ascending: false })
+     .limit(20);
+
+    console.log('Supabase response:', { data, error });
+
+    if (error) {
+      listDiv.innerHTML = `<div style="color:red;padding:20px;background:#fff;border-radius:8px;margin:12px">Supabase Error: ${error.message}</div>`;
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      listDiv.innerHTML = '<div class="loading">No listings found in database</div>';
+      return;
+    }
+
+    allListings = data;
     renderListings();
-  }catch(e){
-    document.getElementById('list').innerHTML = '<div class="loading">Failed to load. Check API_URL.</div>';
+
+  } catch (err) {
+    console.error('JS Error:', err);
+    listDiv.innerHTML = `<div style="color:red;padding:20px;background:#fff;border-radius:8px;margin:12px">JS Error: ${err.message}</div>`;
   }
 }
 
@@ -402,4 +426,4 @@ function closeModal(id){ document.getElementById(id).classList.remove('active');
 </script>
 
 </body>
-        </html>
+  </html>
