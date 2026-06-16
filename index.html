@@ -5,33 +5,45 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Test Pata Keja</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body{font-family:system-ui;padding:20px;font-size:18px}.ok{color:green}.err{color:red}</style>
 </head>
 <body>
 <h1>Testing Supabase...</h1>
-<div id="result" style="padding:20px;font-size:18px"></div>
+<div id="result">Starting test...</div>
 
 <script>
-alert('1. JS is running');
+const log = (msg, cls='') => {
+  document.getElementById('result').innerHTML += `<div class="${cls}">${msg}</div>`;
+};
 
-const SUPABASE_URL = 'https://edboplgobqnjlncplrhq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYm9wbGdvYnFuamxuY3BscmhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MzQ0MzAsImV4cCI6MjA5NzAxMDQzMH0.1o8FH7jaQik7VZeE3iSIhd_Qdou-tTsYqdq1ShY3dqw';
+log('1. JS is running');
 
-alert('2. Creating Supabase client');
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+try {
+  const SUPABASE_URL = 'https://edboplgobqnjlncplrhq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYm9wbGdvYnFuamxuY3BscmhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MzQ0MzAsImV4cCI6MjA5NzAxMDQzMH0.1o8FH7jaQik7VZeE3iSIhd_Qdou-tTsYqdq1ShY3dqw';
 
-alert('3. Client created. Fetching listings...');
+  log('2. Creating Supabase client');
 
-supabase.from('listings').select('*').limit(20).then(({ data, error }) => {
-  if (error) {
-    alert('4. ERROR: ' + error.message);
-    document.getElementById('result').innerHTML = 'Error: ' + error.message;
+  if (typeof window.supabase === 'undefined') {
+    log('ERROR: window.supabase is undefined. CDN failed to load', 'err');
   } else {
-    alert('4. SUCCESS: Found ' + data.length + ' rows');
-    document.getElementById('result').innerHTML = 'Found ' + data.length + ' listings<br><br>' + JSON.stringify(data[0] || 'No data', null, 2);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    log('3. Client created. Fetching listings...');
+
+    supabase.from('listings').select('*').limit(20).then(({ data, error }) => {
+      if (error) {
+        log('4. ERROR: ' + error.message, 'err');
+      } else {
+        log('4. SUCCESS: Found ' + data.length + ' rows', 'ok');
+        log('<pre>' + JSON.stringify(data[0] || 'Table empty', null, 2) + '</pre>');
+      }
+    }).catch(err => {
+      log('5. CATCH: ' + err.message, 'err');
+    });
   }
-}).catch(err => {
-  alert('5. CATCH: ' + err.message);
-});
+} catch (e) {
+  log('CRASH: ' + e.message, 'err');
+}
 </script>
 
 </body>
