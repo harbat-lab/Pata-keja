@@ -156,6 +156,7 @@ let allListings = [];
 let pendingAction = null;
 
 window.addEventListener('load', async ()=>{
+  alert('App started');
   currentUser = JSON.parse(localStorage.getItem('patakeja_user')||'null');
   updateHeader();
   await loadListings();
@@ -239,19 +240,21 @@ async function verifyOTP(){
 
 async function loadListings(){
   const listDiv = document.getElementById('list');
+  alert('Starting loadListings');
+
+  if (typeof supabase === 'undefined') {
+    alert('ERROR: Supabase JS not loaded');
+    listDiv.innerHTML = '<div style="color:red;padding:20px">Supabase JS not loaded</div>';
+    return;
+  }
+
   listDiv.innerHTML = '<div class="loading">Loading houses...</div>';
+  alert('Supabase exists, fetching data...');
 
   try {
-    console.log('Fetching from Supabase:', SUPABASE_URL);
+    const { data, error } = await supabase.from('listings').select('*').limit(20);
 
-    const { data, error } = await supabase
-    .from('listings')
-    .select('*')
-    .order('id', { ascending: false })
-    .limit(20);
-
-    console.log('Supabase response:', { data, error });
-    alert('Supabase says: ' + (error? 'ERROR - ' + error.message : 'SUCCESS - Found ' + data.length + ' listings'));
+    alert('Fetch complete. Error: ' + (error? error.message : 'None') + ' | Rows: ' + (data? data.length : 0));
 
     if (error) {
       listDiv.innerHTML = `<div style="color:red;padding:20px;background:#fff;border-radius:8px;margin:12px">Supabase Error: ${error.message}</div>`;
@@ -259,16 +262,16 @@ async function loadListings(){
     }
 
     if (!data || data.length === 0) {
-      listDiv.innerHTML = '<div class="loading">No listings found in database</div>';
+      listDiv.innerHTML = '<div style="padding:20px;background:#fff;border-radius:8px;margin:12px">No listings in database</div>';
       return;
     }
 
     allListings = data;
     renderListings();
+    alert('SUCCESS: Rendered ' + data.length + ' listings');
 
   } catch (err) {
-    console.error('JS Error:', err);
-    alert('JS Error: ' + err.message);
+    alert('CATCH Error: ' + err.message);
     listDiv.innerHTML = `<div style="color:red;padding:20px;background:#fff;border-radius:8px;margin:12px">JS Error: ${err.message}</div>`;
   }
 }
@@ -428,4 +431,4 @@ function closeModal(id){ document.getElementById(id).classList.remove('active');
 </script>
 
 </body>
-</html>
+  </html>
