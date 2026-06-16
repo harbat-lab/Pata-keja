@@ -245,12 +245,13 @@ async function loadListings(){
     console.log('Fetching from Supabase:', SUPABASE_URL);
 
     const { data, error } = await supabase
-     .from('listings')
-     .select('*')
-     .order('created_at', { ascending: false })
-     .limit(20);
+    .from('listings')
+    .select('*')
+    .order('id', { ascending: false })
+    .limit(20);
 
     console.log('Supabase response:', { data, error });
+    alert('Supabase says: ' + (error? 'ERROR - ' + error.message : 'SUCCESS - Found ' + data.length + ' listings'));
 
     if (error) {
       listDiv.innerHTML = `<div style="color:red;padding:20px;background:#fff;border-radius:8px;margin:12px">Supabase Error: ${error.message}</div>`;
@@ -267,6 +268,7 @@ async function loadListings(){
 
   } catch (err) {
     console.error('JS Error:', err);
+    alert('JS Error: ' + err.message);
     listDiv.innerHTML = `<div style="color:red;padding:20px;background:#fff;border-radius:8px;margin:12px">JS Error: ${err.message}</div>`;
   }
 }
@@ -426,4 +428,4 @@ function closeModal(id){ document.getElementById(id).classList.remove('active');
 </script>
 
 </body>
-  </html>
+</html>
