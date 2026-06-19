@@ -10,38 +10,39 @@ app.use(express.json());
 const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 const otpStore = new Map();
 
-app.get('/', (req, res) => res.send('Pata Keja + IntaSend ✅'));
+app.get('/', (req, res) => res.send('Pata Keja LIVE ✅'));
 
-// OTP (same)
 app.post('/api/auth/send-otp', (req, res) => {
   const otp = Math.floor(1000 + Math.random() * 9000).toString();
   otpStore.set(req.body.phone, otp);
   console.log('OTP', req.body.phone, otp);
   res.json({ success: true, debug_otp: otp });
 });
+
 app.post('/api/auth/verify-otp', (req, res) => {
   const ok = otpStore.get(req.body.phone) === req.body.otp;
   res.json({ success: ok, user: { id: req.body.phone, phone: req.body.phone } });
 });
 
-// INTASEND STK PUSH
+// LIVE INTASEND
 app.post('/api/mpesa/stkpush', async (req, res) => {
   const { phone, amount, user_id, listing_id } = req.body;
-  console.log('INTASEND PAY', phone, amount);
+  console.log('LIVE PAY', phone, amount);
   
   try {
-    const { data } = await axios.post('https://sandbox.intasend.com/api/v1/payment/mpesa-stk-push/', {
-      first_name: 'Pata',
-      last_name: 'Keja',
-      email: 'test@patakeja.com',
+    const { data } = await axios.post('https://payment.intasend.com/api/v1/payment/mpesa-stk-push/', {
+      first_name: 'Harbat',
+      last_name: 'User',
+      email: 'iconharbart@gmail.com',
       phone_number: phone,
-      amount: amount,
-      api_ref: listing_id,
-      host: 'https://pata-keja-oo6v.onrender.com'
+      amount: 1, // CHANGE TO 1 FOR TEST, then 100 later
+      api_ref: 'PATA-' + listing_id,
+      wallet_id: 'YOUR_MPESA_WALLET' // IntaSend will use default
     }, {
       headers: {
         'X-IntaSend-Public-API-Key': process.env.INTASEND_PUB,
-        'Authorization': `Bearer ${process.env.INTASEND_SECRET}`
+        'Authorization': `Bearer ${process.env.INTASEND_SECRET}`,
+        'Content-Type': 'application/json'
       }
     });
 
@@ -52,11 +53,11 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
       amount
     }]);
 
-    console.log('✅ IntaSend sent', data);
+    console.log('✅ STK SENT', data.invoice.invoice_id);
     res.json({ ResponseCode: '0', CheckoutRequestID: data.invoice.invoice_id });
     
   } catch (e) {
-    console.error('❌ IntaSend error', e.response?.data || e.message);
+    console.error('❌', e.response?.data || e.message);
     res.status(500).json({ error: e.response?.data });
   }
 });
