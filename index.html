@@ -3,141 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pata Keja - Houses & Shops in Nairobi</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Pata Keja</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
-:root{--green:#00A651;--dark:#1A1A1A;--gray:#F5F5F5;--gold:#FFB300}
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
-body{background:var(--gray);color:var(--dark)}
-.header{background:var(--green);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+:root{--green:#00A651}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+body{background:#F5F5F5}
+.header{background:var(--green);color:#fff;padding:12px 16px;display:flex;justify-content:space-between}
 .logo{font-weight:700;font-size:20px}
-.btn-outline{background:#fff;color:var(--green);border:1px solid var(--green);padding:8px 12px;border-radius:8px}
-.filters{padding:12px 16px;background:#fff;display:flex;gap:8px;overflow-x:auto}
-.filter-chip{padding:6px 12px;border:1px solid #ddd;border-radius:20px;font-size:14px;white-space:nowrap;cursor:pointer}
-.filter-chip.active{background:var(--green);color:#fff;border-color:var(--green)}
+.debug{background:#FFF3CD;padding:12px;margin:12px;border-radius:8px;font-size:14px}
 .list{padding:16px;display:grid;gap:12px}
-.card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-.card-img{width:100%;height:160px;object-fit:cover;background:#eee}
+.card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.card-img{width:100%;height:160px;object-fit:cover}
 .card-body{padding:12px}
 .price{font-size:18px;font-weight:700;color:var(--green)}
-.meta{font-size:14px;color:#666;margin:4px 0}
-.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:4px;background:#E8F5E9;color:var(--green)}
-.debug{background:#FFF3CD;color:#856404;padding:12px;margin:12px 16px;border-radius:8px;font-size:14px}
-.loading{text-align:center;padding:40px;color:#666}
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="logo">Pata Keja</div>
-  <div><button class="btn-outline">Login</button></div>
+  <div>Login</div>
 </div>
 
-<div id="debug" class="debug">Starting...</div>
+<div id="debug" class="debug">1. HTML loaded</div>
 
-<div class="filters">
-  <div class="filter-chip active" onclick="setFilter('type','all')">All</div>
-  <div class="filter-chip" onclick="setFilter('type','house')">Houses</div>
-  <div class="filter-chip" onclick="setFilter('type','shop')">Shops</div>
-</div>
-
-<div id="list" class="list">
-  <div class="loading">Loading houses near you...</div>
-</div>
+<div id="list" class="list">Loading...</div>
 
 <script>
-const SUPABASE_URL = 'https://edboplgobqnjlncplrhq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYm9wbGdvYnFuamxuY3BscmhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MzQ0MzAsImV4cCI6MjA5NzAxMDQzMH0.1o8FH7jaQik7VZeE3iSIhd_Qdou-tTsYqdq1ShY3dqw';
+const debug = document.getElementById('debug');
+function log(m){ debug.innerHTML += '<br>' + m; }
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const debugEl = document.getElementById('debug');
-let allListings = [];
-let filters = {type:'all'};
+// Check if supabase loaded
+if (typeof window.supabase === 'undefined') {
+  log('2. ERROR: Supabase library FAILED to load');
+  log('3. Check internet connection');
+} else {
+  log('2. Supabase library loaded OK');
 
-function log(msg) {
-  debugEl.innerHTML += '<br>' + msg;
-  console.log(msg);
-}
+  const SUPABASE_URL = 'https://edboplgobqnjlncplrhq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYm9wbGdvYnFuamxuY3BscmhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MzQ0MzAsImV4cCI6MjA5NzAxMDQzMH0.1o8FH7jaQik7VZeE3iSIhd_Qdou-tTsYqdq1ShY3dqw';
 
-window.addEventListener('load', async ()=>{
-  log('1. Page loaded');
-  await loadListings();
-});
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  log('3. Client created');
 
-async function loadListings(){
-  const listDiv = document.getElementById('list');
-  log('2. Fetching from Supabase...');
-
-  try {
-    // REMOVED.eq('active', true) to test if that's the issue
-    const { data, error } = await supabase.from('listings').select('*').limit(20);
-
-    log('3. Fetch done');
-
+  supabase.from('listings').select('*').limit(20).then(({data, error}) => {
     if (error) {
-      log('ERROR: ' + error.message);
-      listDiv.innerHTML = `<div style="color:red;padding:20px">Error: ${error.message}</div>`;
-      return;
+      log('4. ERROR: ' + error.message);
+      document.getElementById('list').innerHTML = 'Error: ' + error.message;
+    } else {
+      log('4. SUCCESS: Got ' + data.length + ' listings');
+      document.getElementById('list').innerHTML = data.map(l => `
+        <div class="card">
+          <img src="${l.images?.[0]||'https://via.placeholder.com/400'}" class="card-img">
+          <div class="card-body">
+            <div class="price">KES ${l.price?.toLocaleString()}</div>
+            <div>${l.title}</div>
+            <div style="color:#666;font-size:14px">${l.estate}</div>
+          </div>
+        </div>
+      `).join('');
     }
-
-    log('4. Got ' + data.length + ' rows total');
-
-    if (!data || data.length === 0) {
-      log('5. Table is empty');
-      listDiv.innerHTML = '<div style="padding:20px">No listings in database</div>';
-      return;
-    }
-
-    // Show how many are active vs inactive
-    const activeCount = data.filter(l => l.active === true).length;
-    log('5. Active listings: ' + activeCount + ' / ' + data.length);
-
-    allListings = data;
-    renderListings();
-
-  } catch (err) {
-    log('CRASH: ' + err.message);
-    listDiv.innerHTML = `<div style="color:red;padding:20px">JS Error: ${err.message}</div>`;
-  }
-}
-
-function renderListings(){
-  log('6. Rendering listings...');
-  const list = document.getElementById('list');
-
-  let filtered = allListings.filter(l=>{
-    if(filters.type!=='all' && l.type!==filters.type) return false;
-    return true;
+  }).catch(e => {
+    log('5. CATCH: ' + e.message);
   });
-
-  log('7. Filtered to ' + filtered.length + ' listings');
-
-  if(filtered.length===0){
-    list.innerHTML = '<div class="loading">No listings match filters</div>';
-    return;
-  }
-
-  list.innerHTML = filtered.map(l=>`
-    <div class="card">
-      <img src="${l.images?.[0]||'https://via.placeholder.com/400x160'}" class="card-img">
-      <div class="card-body">
-        <div class="price">KES ${l.price.toLocaleString()}/mo</div>
-        <div class="meta">${l.title}</div>
-        <div class="meta">${l.estate} • ${l.beds}</div>
-        ${l.verified?'<span class="badge">✓ Verified</span>':''}
-        <div class="meta" style="font-size:12px">Active: ${l.active}</div>
-      </div>
-    </div>
-  `).join('');
-
-  log('8. SUCCESS: Rendered cards');
-}
-
-function setFilter(key,val){
-  filters[key]=val;
-  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
-  event.target.classList.add('active');
-  renderListings();
 }
 </script>
 
