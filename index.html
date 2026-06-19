@@ -1,127 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pata Keja - Houses & Shops in Nairobi</title>
-<style>
-:root{--green:#00A651}
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-body{background:#F5F5F5}
-.header{background:var(--green);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
-.logo{font-weight:700;font-size:20px}
-.btn{background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer}
-.btn-outline{background:#fff;color:var(--green);border:1px solid var(--green);padding:8px 12px;border-radius:8px}
-.filters{padding:12px 16px;background:#fff;display:flex;gap:8px;overflow-x:auto}
-.chip{padding:6px 12px;border:1px solid #ddd;border-radius:20px;font-size:14px;white-space:nowrap;cursor:pointer}
-.chip.active{background:var(--green);color:#fff;border-color:var(--green)}
-.list{padding:16px;display:grid;gap:12px}
-.card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);cursor:pointer}
-.card img{width:100%;height:180px;object-fit:cover}
-.card-body{padding:12px}
-.price{color:var(--green);font-weight:700;font-size:18px}
-.meta{color:#666;font-size:14px;margin-top:4px}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
-.modal.active{display:flex}
-.box{background:#fff;border-radius:16px;max-width:400px;width:100%;padding:20px}
-.input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0}
-</style>
+<title>Pata Keja — Pay to Unlock Contacts</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body{background:#0a0a0a;color:#fff;font-family:Inter,system-ui}.card{background:#141414;border:1px solid #222}</style>
 </head>
 <body>
-
-<div class="header">
-  <div class="logo">Pata Keja</div>
-  <div id="hdr"><button class="btn-outline" onclick="login()">Login</button></div>
-</div>
-
-<div class="filters">
-  <div class="chip active" onclick="filter('all',this)">All</div>
-  <div class="chip" onclick="filter('house',this)">Houses</div>
-  <div class="chip" onclick="filter('shop',this)">Shops</div>
-  <div class="chip" onclick="filter('single',this)">Single</div>
-</div>
-
-<div id="list" class="list">Loading...</div>
-
-<div id="loginM" class="modal">
-  <div class="box">
-    <h3>Login with M-Pesa</h3>
-    <input id="phone" class="input" placeholder="0712345678">
-    <button class="btn" style="width:100%" onclick="sendOTP()">Send Code</button>
-    <div id="otpBox" style="display:none;margin-top:12px">
-      <input id="otp" class="input" placeholder="4-digit code" maxlength="4">
-      <button class="btn" style="width:100%" onclick="verify()">Verify</button>
-    </div>
-    <p id="loginMsg" style="font-size:14px;color:#666;margin-top:8px"></p>
+<header class="sticky top-0 z-40 bg-black/80 backdrop-blur border-b border-zinc-800">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2 font-bold text-xl"><span class="w-8 h-8 bg-white text-black grid place-items-center rounded">P</span>Pata Keja</div>
+    <div id="hdr" class="flex items-center gap-3"></div>
   </div>
-</div>
+</header>
 
-<div id="payM" class="modal">
-  <div class="box">
-    <h3>Unlock Contact - 100 KES</h3>
-    <p>Pay via M-Pesa to see number</p>
-    <button id="payBtn" class="btn" style="width:100%;margin-top:12px" onclick="pay()">Pay 100 KES</button>
-    <p id="payMsg" style="font-size:14px;color:#666;margin-top:8px"></p>
+<main class="max-w-6xl mx-auto px-4 py-6">
+  <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+</main>
+
+<div id="modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+  <div class="bg-zinc-900 w-full max-w-lg rounded-2xl border border-zinc-800 max-h-[90vh] overflow-auto">
+    <div class="p-4 border-b border-zinc-800 flex justify-between">
+      <h3 id="mTitle" class="font-bold"></h3>
+      <button onclick="closeM()" class="text-zinc-400">✕</button>
+    </div>
+    <div id="mBody" class="p-4"></div>
   </div>
 </div>
 
 <script>
-const API='https://pata-keja-oo6v.onrender.com';
-const SB_URL='https://edboplgobqnjlncplrhq.supabase.co/rest/v1';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYm9wbGdvYnFuamxuY3BscmhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MzQ0MzAsImV4cCI6MjA5NzAxMDQzMH0.1o8FH7jaQik7VZeE3iSIhd_Qdou-tTsYqdq1ShY3dqw';
+const API = 'https://pata-keja-oo6v.onrender.com';
+const SUPABASE_URL = 'https://edboplgobqnjlncplrhq.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYm9wbGdvYnFuamxuY3BscmhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MzQ0MzAsImV4cCI6MjA5NzAxMDQzMH0.1o8FH7jaQik7VZeE3iSIhd_Qdou-tTsYqdq1ShY3dqw';
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-let listings=[], user=JSON.parse(localStorage.getItem('pk_user')||'null'), current=null, f='all';
+let user = JSON.parse(localStorage.getItem('pk_user')||'null');
+let current = null;
 
-function hdr(){document.getElementById('hdr').innerHTML=user?`<span style="font-size:14px">${user.phone}</span>`:`<button class="btn-outline" onclick="login()">Login</button>`}
-hdr();
+function hdr(){
+  document.getElementById('hdr').innerHTML = user
+  ? `<span class="text-sm text-zinc-400">${user.phone}</span><button onclick="logout()" class="px-3 py-1.5 bg-zinc-800 rounded-lg text-sm">Logout</button>`
+    : `<button onclick="login()" class="px-4 py-2 bg-white text-black rounded-xl font-semibold">Login</button>`;
+}
+function logout(){ localStorage.removeItem('pk_user'); user=null; hdr(); }
 
-fetch(`${SB_URL}/listings?select=*&limit=50`,{headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}})
-.then(r=>r.json()).then(d=>{listings=d;render()});
+function normalizePhone(p){
+  p=p.replace(/\s+/g,'').replace('+','');
+  if(p.startsWith('0')) return '254'+p.slice(1);
+  if(p.startsWith('254')) return p;
+  return '254'+p;
+}
 
-function render(){
-  const l=document.getElementById('list');
-  const fil=listings.filter(x=>f==='all'||x.type===f);
-  l.innerHTML=fil.map(x=>`
-    <div class="card" onclick="view(${x.id})">
-      <img src="${x.images?.[0]||'https://via.placeholder.com/400'}">
-      <div class="card-body">
-        <div class="price">KES ${x.price?.toLocaleString()}/mo</div>
-        <div>${x.title}</div>
-        <div class="meta">${x.estate} • ${x.beds||''}</div>
+function login(){
+  openM('Login with M-Pesa',
+  `<div class="space-y-3">
+    <input id="phone" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3" placeholder="07xx xxx xxx">
+    <button onclick="sendOTP()" class="w-full py-3 bg-white text-black rounded-xl font-semibold">Send Code</button>
+    <div id="otpBox" class="hidden space-y-3">
+      <input id="otp" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3" placeholder="Enter 4-digit code">
+      <button onclick="verify()" class="w-full py-3 bg-white text-black rounded-xl font-semibold">Verify</button>
+    </div>
+    <p id="loginMsg" class="text-sm text-zinc-400"></p>
+  </div>`);
+}
+
+async function sendOTP(){
+  const raw=document.getElementById('phone').value;
+  const p=normalizePhone(raw);
+  localStorage.setItem('pk_phone',p);
+  document.getElementById('loginMsg').textContent='Sending...';
+  try{
+    const r=await fetch(`${API}/api/auth/send-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:p})});
+    const d=await r.json();
+    document.getElementById('otpBox').style.display='block';
+    document.getElementById('loginMsg').textContent=d.debug_otp?`CODE: ${d.debug_otp}`:'Code sent';
+  }catch(e){document.getElementById('loginMsg').textContent='Error - try again';}
+}
+
+async function verify(){
+  const p=localStorage.getItem('pk_phone');
+  const o=document.getElementById('otp').value;
+  document.getElementById('loginMsg').textContent='Verifying...';
+  try{
+    const r=await fetch(`${API}/api/auth/verify-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:p,otp:o})});
+    const d=await r.json();
+    if(d.success){
+      user=d.user;
+      localStorage.setItem('pk_user',JSON.stringify(user));
+      closeM(); hdr();
+      if(current) view(current.id);
+    }else{
+      document.getElementById('loginMsg').textContent='Wrong code';
+    }
+  }catch(e){document.getElementById('loginMsg').textContent='Error';}
+}
+
+async function load(){
+  const {data} = await supa.from('listings').select('*').order('created_at',{ascending:false}).limit(30);
+  document.getElementById('grid').innerHTML = (data||[]).map(l=>`
+    <div class="card rounded-2xl overflow-hidden cursor-pointer" onclick="view('${l.id}')">
+      <img src="${l.image_url||'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6'}" class="w-full h-48 object-cover">
+      <div class="p-4">
+        <div class="font-bold">${l.title}</div>
+        <div class="text-zinc-400 text-sm">${l.location} • KES ${l.price?.toLocaleString()}</div>
+        <div class="mt-2 text-xs px-2 py-1 bg-zinc-800 inline-block rounded">Unlock: KES 100</div>
       </div>
     </div>`).join('');
 }
 
-function filter(t,el){f=t;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');render()}
-function login(){document.getElementById('loginM').classList.add('active')}
-function closeM(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active'))}
-
-async function sendOTP(){
-  const p=document.getElementById('phone').value.replace(/\s/g,'');
-  await fetch(`${API}/api/auth/send-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:p})});
-  document.getElementById('otpBox').style.display='block';
-  document.getElementById('loginMsg').textContent='Code sent';
-}
-async function verify(){
-  const p=document.getElementById('phone').value.replace(/\s/g,'');
-  const o=document.getElementById('otp').value;
-  const r=await fetch(`${API}/api/auth/verify-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:p,otp:o})});
-  const d=await r.json();
-  if(d.success){user=d.user;localStorage.setItem('pk_user',JSON.stringify(user));closeM();hdr();if(current)view(current.id)}
-  else{document.getElementById('loginMsg').textContent='Wrong code'}
-}
 async function view(id){
-  current=listings.find(x=>x.id===id);
-  if(!user){login();return}
-  const r=await fetch(`${API}/api/unlocks/check?user_id=${user.id}&listing_id=${id}`);
-  const d=await r.json();
-  if(d.unlocked){alert('Caretaker: '+d.phone)}else{document.getElementById('payM').classList.add('active')}
+  const {data:l} = await supa.from('listings').select('*').eq('id',id).single();
+  current=l;
+  let unlocked=false, phone='';
+  if(user){
+    const r=await fetch(`${API}/api/unlocks/check?user_id=${user.id}&listing_id=${id}`);
+    const d=await r.json();
+    unlocked=d.unlocked; phone=d.phone||l.caretaker_phone;
+  }
+  openM(l.title,`
+    <img src="${l.image_url}" class="w-full h-56 object-cover rounded-xl mb-4">
+    <p class="text-zinc-300 mb-4">${l.description||''}</p>
+    <div class="p-4 bg-zinc-800 rounded-xl">
+      ${unlocked?`<div class="font-mono text-lg">${phone}</div><a href="tel:${phone}" class="mt-2 inline-block px-4 py-2 bg-green-600 rounded-lg">Call Now</a>`
+      :`<div class="mb-2">Pay KES 100 to reveal caretaker number</div>
+        <button onclick="pay()" class="w-full py-3 bg-white text-black rounded-xl font-semibold">Pay with M-Pesa</button>
+        <p id="payMsg" class="text-sm text-zinc-400 mt-2"></p>`}
+    </div>`);
 }
+
 async function pay(){
-  document.getElementById('payBtn').disabled=true;
-  document.getElementById('payMsg').textContent='Check phone for M-Pesa...';
-  await fetch(`${API}/api/pochi/stkpush`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:user.phone,amount:100,reference:`UNLOCK_${current.id}`,description:'Pata Keja',user_id:user.id,listing_id:current.id})});
+  if(!user) return login();
+  document.getElementById('payMsg').textContent='Sending STK...';
+  const r=await fetch(`${API}/api/pochi/stkpush`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({phone:user.phone,amount:100,user_id:user.id,listing_id:current.id,reference:'PataKeja'})});
+  const d=await r.json();
+  document.getElementById('payMsg').textContent = d.ResponseCode==='0'?'Check your phone for M-Pesa prompt':'Error - try again';
+  let tries=0; const t=setInterval(async()=>{
+    tries++; const c=await fetch(`${API}/api/unlocks/check?user_id=${user.id}&listing_id=${current.id}`); const j=await c.json();
+    if(j.unlocked){clearInterval(t); view(current.id);}
+    if(tries>20) clearInterval(t);
+  },3000);
 }
+
+function openM(t,h){document.getElementById('mTitle').textContent=t;document.getElementById('mBody').innerHTML=h;document.getElementById('modal').classList.remove('hidden');document.getElementById('modal').classList.add('flex');}
+function closeM(){document.getElementById('modal').classList.add('hidden');}
+
+hdr(); load();
 </script>
 </body>
 </html>
